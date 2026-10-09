@@ -1,4 +1,4 @@
-# apple-cta-websites
+# sunrise-web
 
 Everything served at **https://bishal.app**: the app catalogue at `/` and landing pages for our seven apps at `/lotus-*/`. Each app gets one simple website, and each site has one job: collecting waitlist emails through a single call-to-action (CTA) button while the app is still being built.
 
