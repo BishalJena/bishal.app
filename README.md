@@ -100,7 +100,7 @@ To run it locally (with a local copy of the database): `npx wrangler pages dev`.
 
 ## Analytics
 
-One Cloudflare Web Analytics site for `bishal.app` covers the catalogue and every `/lotus-*` page (the beacon is in `public/index.html` and in every generated page). It's cookieless. To see one app, filter the dashboard by path, e.g. `/lotus-g-1/`.
+Web Analytics is switched on in the Pages project, so Cloudflare adds its cookieless beacon to every page it serves (the catalogue and every `/lotus-*` page). There's nothing to add in the code. To see one app, filter the dashboard by path, e.g. `/lotus-g-1/`.
 
 Export sign-ups (exports are gitignored; they contain personal data):
 
