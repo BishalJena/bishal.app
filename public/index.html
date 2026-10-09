@@ -162,5 +162,8 @@
     const fromHash = apps.findIndex((a) => slug(a.name) === location.hash.slice(1));
     select(fromHash >= 0 ? fromHash : 0);
   </script>
+
+  <!-- Cloudflare Web Analytics (cookieless; one site covers / and /lotus-*) -->
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "8ceb5101c97847098b77f9ea45a702fb"}'></script>
 </body>
 </html>

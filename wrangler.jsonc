@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "bishal-app",
+  // Main site. /lotus-* is served by the separate lotus-waitlists Worker (apple-cta-websites repo).
+  "name": "bishal-app-pages",
   "compatibility_date": "2026-10-01",
   // Static site: everything in ./public is served as-is, no Worker script needed.
   "assets": {
