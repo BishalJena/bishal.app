@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bishal-app",
+  "compatibility_date": "2026-10-01",
+  // Static site: everything in ./public is served as-is, no Worker script needed.
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    { "pattern": "bishal.app", "custom_domain": true },
+    { "pattern": "www.bishal.app", "custom_domain": true }
+  ]
+}

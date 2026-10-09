@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>bishal.app — Catalogue</title>
+  <meta name="description" content="A catalogue of apps made by Bishal, with live previews." />
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" aria-label="Apps">
+      <p class="eyebrow">bishal.app</p>
+      <h1>Our Catalogue</h1>
+      <ul class="list" id="list" role="listbox" aria-label="Apps" tabindex="-1"></ul>
+      <p class="hint"><kbd>↑</kbd> <kbd>↓</kbd> to browse</p>
+    </nav>
+
+    <section class="window" id="window" aria-label="Preview">
+      <header class="toolbar">
+        <div class="lights" aria-hidden="true"><span></span><span></span><span></span></div>
+
+        <a class="address" id="address" target="_blank" rel="noopener" title="Open in new tab">
+          <svg width="11" height="13" viewBox="0 0 11 13" fill="currentColor" aria-hidden="true"><path d="M2.5 5.5V4a3 3 0 0 1 6 0v1.5h.5A1.5 1.5 0 0 1 10.5 7v4.5A1.5 1.5 0 0 1 9 13H2A1.5 1.5 0 0 1 .5 11.5V7A1.5 1.5 0 0 1 2 5.5h.5zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v1.5z"/></svg>
+          <span class="url" id="url"></span>
+        </a>
+
+        <div class="actions">
+          <button class="tool" id="device" type="button" aria-pressed="false" title="Phone preview" aria-label="Toggle phone preview">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>
+          </button>
+          <button class="tool" id="reload" type="button" title="Reload" aria-label="Reload preview">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+          </button>
+          <a class="tool" id="open" target="_blank" rel="noopener" title="Open in new tab" aria-label="Open in new tab">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </a>
+        </div>
+        <span class="progress" aria-hidden="true"></span>
+      </header>
+
+      <div class="viewport">
+        <iframe class="frame" id="frame" title="App preview" loading="lazy" referrerpolicy="no-referrer"></iframe>
+        <div class="blocked" id="blocked"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="apps.js"></script>
+  <script>
+    // Simple line glyphs drawn in the spirit of SF Symbols.
+    const GLYPHS = {
+      spark: '<path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/>',
+      leaf: '<path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z"/><path d="M5 19c3-4 6-7 10-9"/>',
+      wave: '<path d="M2 9c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3 2.5 3 5 3"/><path d="M2 15c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3 2.5 3 5 3"/>',
+      grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/>',
+      bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',
+      chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/>',
+      moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
+      camera: '<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>',
+    };
+
+    const apps = window.APPS || [];
+    const $ = (s) => document.querySelector(s);
+    const esc = (s = "") => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const parse = (u) => { try { return new URL(u); } catch { return null; } };
+
+    const colorVars = (a) => `--c1:${esc(a.colors?.[0] || "#8e8e93")};--c2:${esc(a.colors?.[1] || "#3a3a3c")}`;
+    const icon = (a) => `
+      <span class="icon" style="${colorVars(a)}" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${GLYPHS[a.glyph] || GLYPHS.spark}</svg>
+      </span>`;
+
+    const list = $("#list"), win = $("#window"), frame = $("#frame");
+
+    // Sidebar
+    list.innerHTML = apps.map((a, i) => {
+      const u = parse(a.url);
+      return `
+        <li>
+          <button class="row" id="app-${i}" role="option" aria-selected="false" data-i="${i}" style="${colorVars(a)}">
+            <span class="num">${i + 1}.</span>
+            ${icon(a)}
+            <span><span class="name">${esc(a.name)}</span><span class="host">${esc(u ? u.host.replace(/^www\./, "") : a.url)}</span></span>
+          </button>
+        </li>`;
+    }).join("");
+    const rows = [...list.querySelectorAll(".row")];
+
+    // Select an app → update toolbar + preview
+    let current = -1;
+    function select(i, { focus = false } = {}) {
+      if (i < 0 || i >= apps.length || i === current) return;
+      current = i;
+      const a = apps[i];
+      const u = parse(a.url);
+
+      rows.forEach((r, n) => r.setAttribute("aria-selected", n === i));
+      if (focus) rows[i].focus();
+      rows[i].scrollIntoView({ block: "nearest" });
+      history.replaceState(null, "", "#" + slug(a.name));
+
+      const path = u ? (u.pathname === "/" ? "" : u.pathname) : "";
+      $("#url").innerHTML = u
+        ? `${esc(u.host.replace(/^www\./, ""))}<span class="path">${esc(path)}</span>`
+        : esc(a.url);
+      $("#address").href = $("#open").href = a.url;
+      document.title = `${a.name} — bishal.app`;
+
+      if (a.embed === false) {
+        win.classList.add("no-embed");
+        win.classList.remove("loading");
+        frame.removeAttribute("src");
+        $("#blocked").innerHTML = `
+          ${icon(a)}
+          <h2>${esc(a.name)}</h2>
+          <p>This site can't be previewed here. Open it in a new tab instead.</p>
+          <a class="btn" href="${esc(a.url)}" target="_blank" rel="noopener">Open ${esc(a.name)}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </a>`;
+      } else {
+        win.classList.remove("no-embed");
+        load(a.url);
+      }
+    }
+
+    function load(url) {
+      win.classList.remove("loaded");
+      void win.offsetWidth; // restart the progress animation
+      win.classList.add("loading");
+      frame.src = url;
+    }
+    frame.addEventListener("load", () => {
+      if (!frame.getAttribute("src")) return;
+      win.classList.replace("loading", "loaded");
+    });
+
+    // Interactions
+    list.addEventListener("click", (e) => {
+      const row = e.target.closest(".row");
+      if (row) select(+row.dataset.i);
+    });
+    list.addEventListener("keydown", (e) => {
+      const step = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+      if (step) { e.preventDefault(); select(Math.min(apps.length - 1, Math.max(0, current + step)), { focus: true }); }
+      if (e.key === "Home") { e.preventDefault(); select(0, { focus: true }); }
+      if (e.key === "End") { e.preventDefault(); select(apps.length - 1, { focus: true }); }
+    });
+    $("#reload").addEventListener("click", () => {
+      const a = apps[current];
+      if (a && a.embed !== false) load(a.url);
+    });
+    $("#device").addEventListener("click", (e) => {
+      const on = win.classList.toggle("phone");
+      e.currentTarget.setAttribute("aria-pressed", on);
+    });
+
+    // Start on the app in the URL hash (shareable links), else the first one
+    const fromHash = apps.findIndex((a) => slug(a.name) === location.hash.slice(1));
+    select(fromHash >= 0 ? fromHash : 0);
+  </script>
+</body>
+</html>
